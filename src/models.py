@@ -8,31 +8,49 @@ from eralchemy2 import render_er
 
 Base = declarative_base()
 
-class Person(Base):
-    __tablename__ = 'person'
-    # Here we define columns for the table person
-    # Notice that each column is also a normal Python instance attribute.
+class User(Base):
+    __tablename__ = 'user'
     id = Column(Integer, primary_key=True)
-    name = Column(String(250), nullable=False)
+    username = Column(String, nullable=False)
+    password = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+    posts = relationship('Post', back_populates='author')
+    comments = relationship('Comment', back_populates='author')
+    followers = relationship('Follower', back_populates='following')
+    following = relationship('Follower', back_populates='follower')
 
-class Address(Base):
-    __tablename__ = 'address'
-    # Here we define columns for the table address.
-    # Notice that each column is also a normal Python instance attribute.
+class Post(Base):
+    __tablename__ = 'post'
     id = Column(Integer, primary_key=True)
-    street_name = Column(String(250))
-    street_number = Column(String(250))
-    post_code = Column(String(250), nullable=False)
-    person_id = Column(Integer, ForeignKey('person.id'))
-    person = relationship(Person)
+    content = Column(String, nullable=False)
+    media = relationship('Media', back_populates='post')
+    author_id = Column(Integer, ForeignKey('user.id'))
+    author = relationship('User', back_populates='posts')
+    comments = relationship('Comment', back_populates='post')
 
-    def to_dict(self):
-        return {}
+class Comment(Base):
+    __tablename__ = 'comment'
+    id = Column(Integer, primary_key=True)
+    content = Column(String, nullable=False)
+    author_id = Column(Integer, ForeignKey('user.id'))
+    post_id = Column(Integer, ForeignKey('post.id'))
+    author = relationship('User', back_populates='comments')
+    post = relationship('Post', back_populates='comments')
 
-## Draw from SQLAlchemy base
-try:
-    result = render_er(Base, 'diagram.png')
-    print("Success! Check the diagram.png file")
-except Exception as e:
-    print("There was a problem genering the diagram")
-    raise e
+class Media(Base):
+    __tablename__ = 'media'
+    id = Column(Integer, primary_key=True)
+    url = Column(String, nullable=False)
+    post_id = Column(Integer, ForeignKey('post.id'))
+    post = relationship('Post', back_populates='media')
+
+class Follower(Base):
+    __tablename__ = 'follower'
+    id = Column(Integer, primary_key=True)
+    follower_id = Column(Integer, ForeignKey('user.id'))
+    following_id = Column(Integer, ForeignKey('user.id'))
+    follower = relationship('User', back_populates='following', foreign_keys=[follower_id])
+    following = relationship('User', back_populates='followers', foreign_keys=[following_id])
+
+
+render_er(Base, 'diagram.png')
